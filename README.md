@@ -1,4 +1,4 @@
-# agent-memory
+# 👣 agent-memory
 
 Persistent memory for coding agents. One session writes down what it did, and the
 next session reads it. Notes live in a git repo you own, outside the projects they
