@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-# Shared configuration resolution. Sourced by the other scripts, never run directly.
+# Shared configuration. The other scripts source this. Do not run it directly.
 #
-# Precedence: AGENT_MEMORY_VAULT env var -> config file -> default.
+# Precedence: AGENT_MEMORY_VAULT env var, then the config file, then the default.
 
 _am_config="${XDG_CONFIG_HOME:-$HOME/.config}/agent-memory/config"
 # shellcheck disable=SC1090

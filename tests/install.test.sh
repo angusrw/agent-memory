@@ -41,13 +41,13 @@ cat > "$SETTINGS" <<'EOF'
 }
 EOF
 
-echo "install.sh — dry run"
+echo "install.sh: dry run"
 "$REPO/install.sh" --vault "$VAULT" --dry-run >/dev/null 2>&1
 check "settings.json unchanged by dry run" "0" "$(hookcount SessionStart session-start-hook)"
 check "no vault created by dry run" "no" "$([ -d "$VAULT" ] && echo yes || echo no)"
 check "no skill link by dry run" "no" "$([ -e "$CLAUDE/skills/agent-memory" ] && echo yes || echo no)"
 
-echo "install.sh — install"
+echo "install.sh: install"
 "$REPO/install.sh" --vault "$VAULT" >/dev/null 2>&1
 check "SessionStart hook added"      "1" "$(hookcount SessionStart session-start-hook)"
 check "PreToolUse guard added"       "1" "$(hookcount PreToolUse guard-hook)"
@@ -65,12 +65,12 @@ check "CLAUDE.md not created" "no" "$([ -e "$CLAUDE/CLAUDE.md" ] && echo yes || 
 check "backup written"        "yes" \
   "$(ls "$CLAUDE"/settings.json.backup-* >/dev/null 2>&1 && echo yes || echo no)"
 
-echo "install.sh — idempotency"
+echo "install.sh: idempotency"
 "$REPO/install.sh" --vault "$VAULT" >/dev/null 2>&1
 check "no duplicate SessionStart" "1" "$(hookcount SessionStart session-start-hook)"
 check "no duplicate PreToolUse"   "1" "$(hookcount PreToolUse guard-hook)"
 
-echo "install.sh — uninstall"
+echo "install.sh: uninstall"
 touch "$VAULT/a-note.md"
 "$REPO/install.sh" --uninstall >/dev/null 2>&1
 check "SessionStart hook removed"  "0"   "$(hookcount SessionStart session-start-hook)"
@@ -80,7 +80,7 @@ check "skill link removed"         "no"  "$([ -e "$CLAUDE/skills/agent-memory" ]
 check "config removed"             "no"  "$([ -f "$XDG_CONFIG_HOME/agent-memory/config" ] && echo yes || echo no)"
 check "vault survives uninstall"   "yes" "$([ -f "$VAULT/a-note.md" ] && echo yes || echo no)"
 
-echo "install.sh — malformed settings.json"
+echo "install.sh: malformed settings.json"
 echo '{ not json' > "$SETTINGS"
 if "$REPO/install.sh" --vault "$VAULT" >/dev/null 2>&1; then
   bad "refuses to run on invalid JSON" "it exited 0"

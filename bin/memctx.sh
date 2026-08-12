@@ -20,7 +20,7 @@ while [ $# -gt 0 ]; do
   esac
 done
 
-# Repo identity: the MAIN worktree's directory name, so every worktree and
+# Repo identity is the main worktree's directory name, so every worktree and
 # branch of a repo shares one memory folder.
 common_dir=$(git -C "$CWD" rev-parse --path-format=absolute --git-common-dir 2>/dev/null)
 if [ -n "$common_dir" ]; then
@@ -37,8 +37,8 @@ else
   worktree="$CWD"
 fi
 
-# Pseudonym: deterministic from the session id, so it is stable for the whole
-# session and needs no stored state. Purely for readability in the index.
+# The pseudonym hashes the session id, so it stays the same for the whole
+# session and needs no stored state. It only makes the index easier to read.
 ADJ=(amber ashen bright brisk calm clever coral dusk eager fleet glass grey
      hollow ivory keen lively mellow north opal pale quiet rapid sage slate
      still swift tawny umber vivid warm wild zinc)
@@ -57,7 +57,7 @@ agent="${ADJ[$(( n % ${#ADJ[@]} ))]}-${ANI[$(( (n / 32) % ${#ANI[@]} ))]}"
 dir="$VAULT/$repo"
 
 # --init makes the repo folder and seeds the index, so a first session in a new
-# repo has somewhere to write. Idempotent; safe to run every time.
+# repo has somewhere to write. It is idempotent, so running it every time is safe.
 if [ "$INIT" -eq 1 ]; then
   if [ "$repo" = "_no-repo" ]; then
     echo "memctx.sh: --init needs a git repo; $CWD is not inside one" >&2

@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
-# Archive finished session notes: set `archived: true` in their frontmatter and
-# drop their line from the index. Files stay where they are, so `continues:`
+# Archive finished session notes. Sets `archived: true` in their frontmatter and
+# drops their line from the index. Files stay where they are, so `continues:`
 # wikilinks between notes keep working.
 #
 #   archive.sh [<repo>] [--days N] [--apply]
 #
-# Defaults to a dry run over every repo in the vault. Nothing is written without
-# --apply. A note is archivable when status is `done` and `updated` is older than
-# N days (default 30).
+# Defaults to a dry run over every repo in the vault. It writes nothing without
+# --apply. A note qualifies when status is `done` and `updated` is older than N
+# days, 30 by default.
 
 set -uo pipefail
 # shellcheck source=/dev/null
@@ -105,7 +105,7 @@ for repo in repos:
 if total == 0:
     print(f"nothing to archive (status: done, updated before {cutoff})")
 elif not apply:
-    print(f"\ndry run — {total} note(s) would be archived. Re-run with --apply.")
+    print(f"\ndry run. {total} note(s) would be archived. Re-run with --apply.")
 else:
     print(f"\narchived {total} note(s); files left in place, index lines removed")
 PY

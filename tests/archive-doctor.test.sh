@@ -75,7 +75,7 @@ has "--days widens the window" "b-new-done" "$out"
 
 echo "doctor.sh"
 out=$("$D" proj); rc=$?
-has "clean vault passes" "ok — no problems" "$out"
+has "clean vault passes" "ok, no problems" "$out"
 if [ "$rc" -eq 0 ]; then ok "clean vault exits 0"; else bad "clean vault exits 0" "got $rc"; fi
 
 note "2020-01-04-d-orphan.md" active "$NEW"
@@ -85,7 +85,7 @@ if [ "$rc" -eq 1 ]; then ok "problems exit 1"; else bad "problems exit 1" "got $
 
 printf -- '- [[2020-01-04-d-orphan]] — now indexed\n' >> "$V/proj/_index.md"
 out=$("$D" proj)
-has "indexing it clears the problem" "ok — no problems" "$out"
+has "indexing it clears the problem" "ok, no problems" "$out"
 
 printf -- '- [[2020-01-09-z-missing]] — never existed\n' >> "$V/proj/_index.md"
 has "dangling index link is reported" "dangling link" "$("$D" proj)"

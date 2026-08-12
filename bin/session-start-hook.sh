@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# SessionStart hook: surface the repo's intent doc and session-memory index.
-# Reads the hook JSON payload on stdin. Silent outside a git repo.
+# SessionStart hook. Prints the repo's intent doc and session-memory index.
+# Reads the hook JSON payload on stdin. Prints nothing outside a git repo.
 
 set -uo pipefail
 # shellcheck source=/dev/null
@@ -25,7 +25,7 @@ except Exception:
 cwd=$(read_field cwd)
 [ -n "$cwd" ] || cwd="$PWD"
 
-# The index is shared across every worktree of a repo, so key it on the common dir.
+# Every worktree of a repo shares one index, so key it on the common dir.
 common_dir=$(git -C "$cwd" rev-parse --path-format=absolute --git-common-dir 2>/dev/null) || exit 0
 [ -n "$common_dir" ] || exit 0
 repo=$(basename "$(dirname "$common_dir")")
@@ -50,14 +50,15 @@ if [ -n "$intent" ]; then
   size=$(wc -c < "$intent" 2>/dev/null | tr -d ' ')
   size=${size:-0}
 
-  echo "## Ground truth — $repo${branch:+ ($branch)}"
+  echo "## Ground truth: $repo${branch:+ ($branch)}"
   echo
 
-  # Inline the doc so it is actually in context. A pointer alone makes the
-  # highest-authority document the least reliably read one. Oversized docs fall
-  # back to a pointer rather than flooding every session in the repo.
+  # Print the whole doc so it lands in context. A pointer on its own leaves the
+  # highest-authority document as the one nobody reads. Oversized docs fall back
+  # to a pointer rather than flooding every session in the repo.
   if [ "$size" -le "$MAX_INTENT_BYTES" ]; then
-    echo "From \`$intent\` — the source of truth for what this project is trying to do."
+    echo "\`$intent\` is the source of truth for this project. It outranks the code"
+    echo "and any session note."
     [ -n "$changed" ] && echo "Last changed $changed."
     echo
     cat "$intent"
@@ -65,22 +66,22 @@ if [ -n "$intent" ]; then
   else
     echo "\`$intent\` is the source of truth for what this project is trying to do."
     [ -n "$changed" ] && echo "Last changed $changed."
-    echo "It is $size bytes, too long to inline — read it before planning."
+    echo "It is $size bytes, too long to inline. Read it before planning."
     echo
   fi
 
   echo "If the code, a session note, or the user's request contradicts it, say so and"
-  echo "stop — do not silently reconcile. Edit it only when explicitly asked to."
+  echo "stop. Do not reconcile the two on your own. Edit it only when asked."
   echo
 fi
 
-# grep -c prints 0 and exits 1 when there are no matches, so `|| echo 0` would
-# append a second 0 and make this a non-integer. Take the output as-is.
+# grep -c prints 0 and exits 1 when nothing matches, so `|| echo 0` would append
+# a second 0 and make this a non-integer. Take the output as it comes.
 entries=0
 [ -f "$index" ] && entries=$(grep -c '^- ' "$index" 2>/dev/null)
 entries=${entries:-0}
 
-echo "## Session memory — $repo"
+echo "## Session memory: $repo"
 echo
 
 if [ "$entries" -gt 0 ]; then
@@ -91,12 +92,12 @@ if [ "$entries" -gt 0 ]; then
 
   if [ "$entries" -gt "$MAX_ENTRIES" ]; then
     echo
-    echo "_($((entries - MAX_ENTRIES)) older entries omitted — see $index)_"
+    echo "_($((entries - MAX_ENTRIES)) older entries omitted. See $index)_"
   fi
   echo
   echo "Notes live in \`$VAULT/$repo/\`. Use the agent-memory skill to write yours."
 else
-  echo "No session notes for this repo yet — this is the first."
+  echo "No session notes for this repo yet. This is the first."
   echo
   echo "If this session produces a decision, a non-obvious change, or a rejected"
   echo "approach, create the folder and write one. Otherwise leave it alone:"

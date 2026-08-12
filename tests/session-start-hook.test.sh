@@ -57,10 +57,10 @@ check "seeded but empty index still prompts" \
 printf -- '- [[a-note]] — did a thing\n' >> "$D/_index.md"
 check "index entries are listed" "did a thing" "$(fire "$TMP/proj")"
 
-printf '# Intent\n\n## Not doing\n- GraphQL — rejected, one shape only.\n' > "$D/_intent.md"
-check "intent doc surfaces" "Ground truth — proj" "$(fire "$TMP/proj")"
+printf '# Intent\n\n## Not doing\n- GraphQL, rejected because one shape is enough.\n' > "$D/_intent.md"
+check "intent doc surfaces" "Ground truth: proj" "$(fire "$TMP/proj")"
 check "intent doc path is shown" "_intent.md" "$(fire "$TMP/proj")"
-check "intent doc CONTENTS are inlined" "GraphQL — rejected" "$(fire "$TMP/proj")"
+check "intent doc CONTENTS are inlined" "GraphQL, rejected" "$(fire "$TMP/proj")"
 
 # Oversized docs must degrade to a pointer, not flood every session.
 python3 -c "open('$D/_intent.md','w').write('# Intent\n\nBLOATED ' + 'x'*9000 + '\n')"
@@ -71,10 +71,10 @@ if printf '%s' "$out" | grep -qF "BLOATED"; then
 else
   ok "oversized doc body withheld"
 fi
-printf '# Intent\n\n## Not doing\n- GraphQL — rejected, one shape only.\n' > "$D/_intent.md"
+printf '# Intent\n\n## Not doing\n- GraphQL, rejected because one shape is enough.\n' > "$D/_intent.md"
 
 git -C "$TMP/proj" worktree add -q "$TMP/proj-feat" -b feature/x 2>/dev/null
-check "worktree shares the repo folder" "Session memory — proj" "$(fire "$TMP/proj-feat")"
+check "worktree shares the repo folder" "Session memory: proj" "$(fire "$TMP/proj-feat")"
 check "worktree without override gets the repo-wide doc" \
   "proj/_intent.md" "$(fire "$TMP/proj-feat")"
 

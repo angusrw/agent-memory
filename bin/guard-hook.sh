@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# PreToolUse(Bash) hook: block any git commit/push against the memory vault.
-# The vault owner commits and pushes it manually. Exit 2 rejects the tool call.
+# PreToolUse(Bash) hook. Blocks git commit and git push against the memory vault.
+# The vault owner runs those by hand. Exit 2 rejects the tool call.
 
 set -uo pipefail
 # shellcheck source=/dev/null
@@ -25,19 +25,19 @@ cmd=$(read_field tool_input.command)
 cwd=$(read_field cwd)
 [ -n "$cmd" ] || exit 0
 
-# Only care about an actual `git commit` / `git push` invocation — git must sit in
-# command position (start, or after a separator), so quoted mentions of the words
-# inside grep/echo arguments do not trip this.
+# Match a real `git commit` or `git push` call only. git must sit in command
+# position, at the start or after a separator, so quoted mentions of the words
+# inside grep or echo arguments do not trip this.
 printf '%s' "$cmd" \
   | grep -Eq '(^|[;&|(]|&&|\|\|)[[:space:]]*git([[:space:]]+-[A-Za-z-]+([[:space:]]+[^[:space:]]+)?)*[[:space:]]+(commit|push)\b' \
   || exit 0
 
-# Does it target the vault? Either by naming it, or by running from inside it
-# without redirecting -C elsewhere.
+# The command targets the vault if it names the vault, or if it runs from inside
+# the vault without pointing -C somewhere else.
 targets_vault=0
 printf '%s' "$cmd" | grep -qF "$VAULT" && targets_vault=1
 
-# Also catch the tilde form of the configured vault path.
+# Catch the tilde form of the configured vault path too.
 vault_tilde="${VAULT/#$HOME/\~}"
 if [ "$vault_tilde" != "$VAULT" ]; then
   printf '%s' "$cmd" | grep -qF "$vault_tilde" && targets_vault=1

@@ -28,13 +28,13 @@ echo
 echo "=== 2. sandbox vault"
 mkdir -p "$VAULT/widget-service"
 cat > "$VAULT/widget-service/_intent.md" <<'EOF'
-# Intent — widget-service
+# Intent: widget-service
 
 ## Goal
 Serve widgets over HTTP with a strict 50ms p99.
 
 ## Not doing
-- GraphQL — rejected, the client only ever needs one shape.
+- GraphQL, rejected because the client only ever needs one shape.
 EOF
 cat > "$VAULT/widget-service/_index.md" <<'EOF'
 # widget-service
@@ -99,7 +99,7 @@ check "intent doc reached the model"                 "GraphQL"
 echo
 echo "=== 6. real vault untouched"
 if [ -e "$HOME/agent-memory-vault" ]; then
-  echo "    note: $HOME/agent-memory-vault exists (default path) — check it was not written"
+  echo "    note: $HOME/agent-memory-vault exists (default path). Check it was not written"
 else
   echo "    ok   no default vault created in \$HOME"
 fi

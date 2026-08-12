@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
-# Check the vault for drift. Reports problems, changes nothing.
+# Checks the vault for drift. Reports problems and changes nothing.
 #
 #   doctor.sh [<repo>]
 #
 # Exits 1 if anything is wrong, so it can gate a script or a hook.
 #
 # Checks, per repo folder:
-#   - notes not listed in _index.md   (invisible to future sessions)
+#   - notes missing from _index.md, which hides them from future sessions
 #   - index lines pointing at files that do not exist
-#   - notes with no parseable frontmatter, or missing required keys
+#   - notes with frontmatter it cannot parse, or missing required keys
 #   - archived notes still listed in the index
 #   - a repo folder with no _index.md at all
 
@@ -41,7 +41,7 @@ problems = 0
 def report(repo, kind, detail):
     global problems
     problems += 1
-    print(f"{repo}: {kind} — {detail}")
+    print(f"{repo}: {kind}: {detail}")
 
 
 for repo in repos:
@@ -77,7 +77,7 @@ for repo in repos:
             if slug in linked:
                 report(repo, "archived but indexed", name)
         elif slug not in linked:
-            report(repo, "not indexed", f"{name} — no future session will see it")
+            report(repo, "not indexed", f"{name}, no future session will see it")
 
     existing = {os.path.splitext(n)[0] for n in notes}
     for slug in sorted(linked - existing):
@@ -85,7 +85,7 @@ for repo in repos:
 
 if problems == 0:
     scope = repo_filter or f"{len(repos)} repo(s)"
-    print(f"ok — no problems found in {scope}")
+    print(f"ok, no problems found in {scope}")
     sys.exit(0)
 
 print(f"\n{problems} problem(s) found")

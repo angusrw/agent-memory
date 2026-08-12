@@ -34,7 +34,7 @@ expect() { # expect <blocked|allowed> <label> <cwd> <command>
   fi
 }
 
-echo "guard-hook — should block"
+echo "guard-hook: should block"
 expect blocked "git -C <vault> commit"        "$TMP"   "git -C $V commit -m x"
 expect blocked "git -C <vault> push"          "$TMP"   "git -C $V push"
 expect blocked "bare commit from inside"      "$V"     "git commit -m note"
@@ -43,7 +43,7 @@ expect blocked "push from a subdirectory"     "$V/sub" "git push"
 expect blocked "amend from inside"            "$V"     "git commit --amend"
 expect blocked "commit after a separator"     "$V"     "cd .; git commit -m x"
 
-echo "guard-hook — should allow"
+echo "guard-hook: should allow"
 expect allowed "commit in an unrelated repo"  "$TMP"   "git commit -m x"
 expect allowed "-C elsewhere from inside"     "$V"     "git -C $TMP/other commit -m x"
 expect allowed "git status inside"            "$V"     "git status --short"
@@ -53,7 +53,7 @@ expect allowed "grep for the words"           "$TMP"   "grep -rn \"git commit\" 
 expect allowed "echo mentioning both"         "$TMP"   "echo $V needs git push"
 expect allowed "unrelated command inside"     "$V"     "ls -la"
 
-echo "guard-hook — message"
+echo "guard-hook: message"
 msg=$(payload "$V" "git commit -m x" | "$G" 2>&1 >/dev/null)
 if printf '%s' "$msg" | grep -q "Blocked"; then
   printf '  ok   %s\n' "explains why it blocked"; pass=$((pass + 1))

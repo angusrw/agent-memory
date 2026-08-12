@@ -1,38 +1,41 @@
 # agent-memory
 
-Persistent memory for coding agents, so one session can pick up where another left
-off. Notes live in a git repo you own, outside the projects they describe.
+Persistent memory for coding agents. One session writes down what it did, and the
+next session reads it. Notes live in a git repo you own, outside the projects they
+describe.
 
-Two problems it solves:
+It solves two problems:
 
-- **Handoff.** An agent finishing work knows what it tried, rejected, and left
-  half-done. The next agent knows none of it. Git records what changed, not why.
-- **Recall.** Writing notes is easy; getting them read is not. A `SessionStart` hook
-  injects the relevant index automatically, so it does not depend on an agent
-  remembering to look.
+- **Handoff.** An agent that finishes work knows what it tried, what it rejected, and
+  what it left half-done. The next agent knows none of that. Git records what changed.
+  It does not record why.
+- **Recall.** Writing notes is easy. Getting them read is the hard part. A
+  `SessionStart` hook injects the index at the start of every session, so nothing
+  depends on an agent choosing to look.
 
-Built for [Claude Code](https://claude.com/claude-code). Bash, git and `python3`.
+Built for [Claude Code](https://claude.com/claude-code). Needs bash, git and
+`python3`.
 
 ## Layout
 
-Nothing is ever written into your project repos. Everything lives in the vault:
+Nothing goes into your project repos. The vault holds everything:
 
 ```
 <vault>/
   <repo-name>/
-    _intent.md                             # ground truth — you write this
+    _intent.md                             # ground truth, written by you
     _intent.<branch>.md                    # optional per-branch override
     _index.md                              # one line per note, newest first
     2026-01-15-sage-heron-auth-refactor.md # one file per session
 ```
 
-One folder per repo, shared by every worktree and branch of it — so an agent in one
-worktree sees what an agent in another did. Repo identity comes from
-`git rev-parse --git-common-dir`, so linked worktrees map back to the main repo.
+One folder per repo. Every worktree and branch of that repo shares it, so an agent in
+one worktree sees what an agent in another wrote. `git rev-parse --git-common-dir`
+resolves the identity, which maps linked worktrees back to the main repo.
 
-One file per session. Two agents in the same worktree write two files, so there are
-no write conflicts and no merge conflicts on content. Only `_index.md` can conflict,
-and it resolves by keeping both lines.
+One file per session. Two agents in the same worktree write two files, so they never
+overwrite each other and git never sees a content conflict. `_index.md` is the only
+file that can conflict, and you resolve it by keeping both lines.
 
 ## Note format
 
@@ -52,39 +55,38 @@ continues: "[[2026-01-13-amber-vole-auth-spike]]"
 ---
 ```
 
-Sections: **Open** (in flight / next step) → **Goal** → **Decisions** → **Changed**
-→ **Don't** (tried and rejected).
+Sections run Open, Goal, Decisions, Changed, Don't.
 
-`head` is the repo HEAD at last update, so `git diff <head>..HEAD` shows what moved
-since the note was written. That turns *Changed* from a claim into something
-checkable.
+`head` records the repo HEAD at the last update. Run `git diff <head>..HEAD` to see
+what moved since. That makes *Changed* checkable instead of a claim.
 
-`agent` is an adjective-animal pseudonym derived deterministically from the session
-id. It makes the index scannable when several agents work the same day. It does not
-imply continuity — a fresh agent has no memory of a previous one.
+`agent` is an adjective-animal pseudonym, derived from the session id by hash. It
+makes the index readable when several agents work on the same day. It implies no
+continuity: a fresh agent remembers nothing of an earlier one.
 
-**Open** matters most and is the section most often skipped, because the agent
-writing it already knows what is in flight. It goes first for that reason.
+Put **Open** first. It is what a new agent needs, and it is the section most likely to
+get skipped, because the agent writing it already knows what is in flight.
 
 ## Ground truth
 
-Session notes are dated reports. They are not authoritative and they go stale.
+Session notes are dated reports. They go stale and they carry no authority.
 
-`<repo>/_intent.md` is. You write it by hand: goal, constraints, and directions
-deliberately rejected. Agents read it, defer to it, and **never edit it unless asked**
-— not even as a side effect of implementing what it describes.
+`<repo>/_intent.md` carries it. You write it by hand: the goal, the constraints, and
+the directions you rejected. Agents read it and defer to it. They do not edit it
+unless you ask, and not as a side effect of the work it describes.
 
-Precedence, highest first: **your instruction → intent doc → code → session notes.**
+Precedence, highest first: **your instruction, then the intent doc, then the code,
+then session notes.**
 
-If an agent finds the code or a note contradicting the intent doc, it says so and
-stops rather than quietly reconciling. Start from `skill/templates/INTENT.md`.
+An agent that finds the code or a note contradicting the intent doc says so and stops
+instead of reconciling on its own. Start from `skill/templates/INTENT.md`.
 
-The hook **inlines the whole doc** into context at session start, so the highest
-authority in the system is not the one thing nobody loaded. Docs over 8KB degrade to
-a pointer instead of flooding every session in that repo.
+The hook inlines the whole doc at session start. A pointer on its own leaves your
+highest authority as the one file nobody reads. Docs over 8KB fall back to a pointer
+so they do not flood every session in that repo.
 
-Keep it to a page. A long intent doc rots, and a rotted one is worse than none,
-because agents have been told to trust it.
+Keep it to a page. A long intent doc goes stale, and a stale one does more damage than
+none, because you have told agents to trust it.
 
 ## Flow
 
@@ -92,8 +94,8 @@ because agents have been told to trust it.
 session starts in a git repo
   └─ SessionStart hook fires
        ├─ resolves the repo via `git rev-parse --git-common-dir`
-       ├─ inlines _intent.md if present    — branch override wins, 8KB cap
-       └─ injects _index.md if present     — last 30 lines
+       ├─ inlines _intent.md if present    (branch override wins, 8KB cap)
+       └─ injects _index.md if present     (last 30 lines)
             └─ no folder yet? says so, and gives the --init command
   └─ agent reads intent, opens only the notes that look relevant
   └─ agent works
@@ -120,20 +122,20 @@ cd agent-memory
 `--vault` defaults to `~/agent-memory-vault`. Add `--dry-run` to see what it would do
 first.
 
-It writes a config file, creates the vault as a git repo if missing, symlinks the
-skill into `~/.claude/skills/agent-memory`, and merges two hooks into
-`~/.claude/settings.json` — backing it up first, preserving hooks you already have,
-and never duplicating on re-run.
+The installer writes a config file, creates the vault as a git repo if it is missing,
+symlinks the skill into `~/.claude/skills/agent-memory`, and merges two hooks into
+`~/.claude/settings.json`. It backs that file up first, keeps hooks you already have,
+and adds nothing twice on a re-run.
 
 **One manual step.** Paste the block from [`snippets/CLAUDE.md`](snippets/CLAUDE.md)
-into your `~/.claude/CLAUDE.md`. The installer will not edit that file, because it is
+into your `~/.claude/CLAUDE.md`. The installer leaves that file alone, because it is
 yours and has your own structure.
 
-Restart running sessions afterwards. Hook config reloads live, but `CLAUDE.md` and
-`SessionStart` are both read at session start.
+Restart running sessions afterwards. Claude Code reloads hook config live, but it
+reads `CLAUDE.md` and fires `SessionStart` only when a session starts.
 
-The vault is created with no remote. Add one yourself if you want it backed up —
-make it **private**, since it will describe your work in detail.
+`install.sh` sets no remote on the vault. Add one if you want a backup, and make it
+private. The vault describes your work in detail.
 
 ### Uninstall
 
@@ -141,41 +143,41 @@ make it **private**, since it will describe your work in detail.
 ./install.sh --uninstall
 ```
 
-Removes the hooks, the skill link, and the config. Never touches your vault. Remove
-the `CLAUDE.md` block by hand.
+This removes the hooks, the skill link, and the config. It leaves your vault alone.
+Remove the `CLAUDE.md` block by hand.
 
 ## Machinery
 
 | Piece | Role |
 |---|---|
 | `bin/memctx.sh` | Resolves vault, repo, branch, HEAD, pseudonym, paths. `--init` seeds the folder |
-| `bin/session-start-hook.sh` | `SessionStart` — injects intent doc and index |
-| `bin/guard-hook.sh` | `PreToolUse(Bash)` — blocks commit/push of the vault |
-| `bin/doctor.sh` | Reports vault drift — unindexed notes, dangling links, bad frontmatter |
+| `bin/session-start-hook.sh` | `SessionStart`. Injects the intent doc and the index |
+| `bin/guard-hook.sh` | `PreToolUse(Bash)`. Blocks commit and push of the vault |
+| `bin/doctor.sh` | Reports vault drift: unindexed notes, dangling links, bad frontmatter |
 | `bin/archive.sh` | Prunes the index by marking old finished notes `archived: true` |
 | `skill/SKILL.md` | Conventions the agent follows when reading and writing |
-| `snippets/CLAUDE.md` | Always-loaded rules; the layer that makes writing reliable |
+| `snippets/CLAUDE.md` | Always-loaded rules. This layer is what makes writing happen |
 
-Three layers, and all three earn their place. `CLAUDE.md` is loaded every turn, so
-writing needs no trigger. The skill holds the mechanics, keeping `CLAUDE.md` short.
-The hook removes the "agent forgot to look" failure mode. A skill alone will not work
-— skills load on description match, and "you are mid-session and should record
-something" is not a match a model reliably makes.
+All three layers earn their place. Claude Code loads `CLAUDE.md` on every turn, so
+writing needs no trigger. The skill holds the mechanics, which keeps `CLAUDE.md`
+short. The hook covers the case where an agent forgets to look. The skill cannot do
+the job on its own: skills load on description match, and "you are mid-session and
+should record something" is not a match a model makes.
 
 ## Commits
 
-The vault is never committed by an agent. Notes are left as unstaged changes and you
-commit them. A `PreToolUse` hook enforces this: `git commit` or `git push` targeting
-the vault is rejected before it runs.
+No agent commits the vault. Agents leave notes as unstaged changes and you commit
+them. A `PreToolUse` hook enforces that. It rejects `git commit` or `git push` aimed
+at the vault before the command runs.
 
-It matches `git` in command position only, so `grep "git commit"` and similar
-read-only commands still work. It sees `Bash` tool calls, so an agent using a git MCP
-server would bypass it — the instruction layer covers intent, the hook covers
+The hook matches `git` in command position, so `grep "git commit"` and other
+read-only commands still run. It sees `Bash` tool calls only, so an agent using a git
+MCP server gets past it. The instruction layer covers intent. The hook covers
 accidents.
 
-If you would rather the vault committed itself, add a `Stop` hook that commits, and
-skip the guard. That is not shipped here because it is untested and the failure mode
-is committing something you did not want committed.
+To have the vault commit itself, add a `Stop` hook that commits and skip the guard.
+This repo does not ship that, because nobody has tested it and the failure mode is a
+commit you did not want.
 
 ## Configuration
 
@@ -186,8 +188,8 @@ VAULT=/home/you/notes/memory
 BIN=/home/you/code/agent-memory/bin
 ```
 
-`AGENT_MEMORY_VAULT` overrides `VAULT` for a single invocation, which is how the
-tests run against a throwaway vault.
+`AGENT_MEMORY_VAULT` overrides `VAULT` for a single run. The tests use it to point at
+a throwaway vault.
 
 ## Tests
 
@@ -195,18 +197,18 @@ tests run against a throwaway vault.
 for t in tests/*.test.sh; do bash "$t"; done
 ```
 
-89 assertions across the hooks, the installer, and the maintenance scripts. They use
-`mktemp` directories and a fake `$HOME`, so they never touch a real vault or
+89 assertions cover the hooks, the installer, and the maintenance scripts. They run in
+`mktemp` directories against a fake `$HOME`, so they never touch a real vault or
 `~/.claude`. CI runs them on Ubuntu and macOS, plus shellcheck.
 
 ```bash
 bash tests/e2e.sh
 ```
 
-`tests/e2e.sh` is separate and not run by CI, because it needs an authenticated
-`claude` CLI. It installs into a sandbox, seeds a vault, runs a real headless
-session in a throwaway repo, and asserts the injected context actually reached the
-model. That is the only test that proves the hook wiring rather than the scripts.
+`tests/e2e.sh` sits outside CI because it needs an authenticated `claude` CLI. It
+installs into a sandbox, seeds a vault, runs a real headless session in a throwaway
+repo, and checks that the injected context reached the model. It is the only test
+that covers the hook wiring rather than the scripts on their own.
 
 ## Maintenance
 
@@ -217,21 +219,21 @@ bin/doctor.sh [repo]     # report drift; exits 1 if anything is wrong
 bin/archive.sh [repo]    # dry run; add --apply to act
 ```
 
-`doctor.sh` catches the failure that matters most: a note written but never added to
-`_index.md`, which makes it invisible to every future session. The skill tells agents
-to run it after writing, scoped to the repo they touched.
+`doctor.sh` catches the worst failure: a note written but never added to `_index.md`,
+which hides it from every later session. The skill tells agents to run it after
+writing, scoped to the repo they touched.
 
-`archive.sh` keeps the index short once it passes ~40 entries. It sets
-`archived: true` on `status: done` notes older than 30 days (`--days N` to change)
-and drops their index lines. Note files are **not moved**, so `continues:` wikilinks
-between notes keep resolving — the index is what controls how much context a session
-loads, not where files sit.
+`archive.sh` keeps the index short once it passes about 40 entries. It sets
+`archived: true` on `status: done` notes older than 30 days and drops their index
+lines. Use `--days N` to change the window. It does not move note files, so
+`continues:` wikilinks keep resolving. The index controls how much context a session
+loads, not where the files sit.
 
 ## Scope
 
-Session narrative only — dated, superseded over time. Durable facts about you or a
-project belong in Claude's own memory (`~/.claude/projects/*/memory/`), which this
-does not touch.
+The vault holds session narrative: dated, superseded over time. Durable facts about
+you or a project belong in Claude's own memory (`~/.claude/projects/*/memory/`), which
+this repo does not touch.
 
 ## Licence
 

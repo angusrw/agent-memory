@@ -11,7 +11,7 @@
 #   4. two hooks merged into ~/.claude/settings.json
 #
 # It never edits your CLAUDE.md and never commits or pushes anything.
-# --uninstall reverses 1, 3 and 4. It never touches the vault.
+# --uninstall reverses steps 1, 3 and 4. It leaves the vault alone.
 
 set -euo pipefail
 
@@ -48,8 +48,8 @@ need python3
 
 # ---------------------------------------------------------------- settings.json
 
-# Merge or remove our hook entries. Always writes a timestamped backup first.
-# Idempotent: re-running never duplicates entries, and existing hooks are kept.
+# Adds or removes our hook entries. Writes a timestamped backup first. Running it
+# again adds nothing twice, and it keeps hooks you already have.
 edit_settings() {
   local mode="$1"
   python3 - "$SETTINGS" "$mode" "$REPO" "$DRY_RUN" <<'PY'
@@ -143,7 +143,7 @@ if [ "$UNINSTALL" -eq 1 ]; then
     step "removing skill symlink $SKILL_LINK"
     run rm "$SKILL_LINK"
   elif [ -e "$SKILL_LINK" ]; then
-    step "$SKILL_LINK is not a symlink — left in place, remove it yourself"
+    step "$SKILL_LINK is not a symlink. Left in place, remove it yourself"
   else
     step "no skill symlink to remove"
   fi
@@ -161,7 +161,7 @@ fi
 
 # ---------------------------------------------------------------------- install
 
-# Resolve the vault: flag, then existing config, then default.
+# Resolve the vault from the flag, then the existing config, then the default.
 VAULT="$VAULT_ARG"
 if [ -z "$VAULT" ] && [ -f "$CONFIG" ]; then
   # shellcheck source=/dev/null
@@ -175,7 +175,7 @@ esac
 say "Installing agent-memory"
 say "  repo:  $REPO"
 say "  vault: $VAULT"
-[ "$DRY_RUN" -eq 1 ] && say "  (dry run — nothing will be written)"
+[ "$DRY_RUN" -eq 1 ] && say "  (dry run, nothing will be written)"
 say
 
 step "config"
@@ -213,17 +213,17 @@ Created by agent-memory; see that repo for the layout and conventions.
 
 Ground truth for a project goes in `<repo>/_intent.md`, hand-written by you.
 
-Keep this repo private — it describes your work in detail.
+Keep this repo private. It describes your work in detail.
 EOF
     step "initialised git repo at $VAULT"
-    step "no remote set — add one yourself if you want it backed up"
+    step "no remote set. Add one yourself if you want a backup"
   fi
 fi
 
 step "skill"
 run mkdir -p "$CLAUDE_DIR/skills"
 if [ -e "$SKILL_LINK" ] && [ ! -L "$SKILL_LINK" ]; then
-  echo "  $SKILL_LINK exists and is not a symlink — move it and re-run" >&2
+  echo "  $SKILL_LINK exists and is not a symlink. Move it and re-run" >&2
   exit 1
 fi
 run ln -sfn "$REPO/skill" "$SKILL_LINK"
@@ -236,6 +236,6 @@ say
 say "Done."
 say
 say "One manual step left: paste the block from snippets/CLAUDE.md into"
-say "$CLAUDE_DIR/CLAUDE.md — the installer will not edit that file for you."
+say "$CLAUDE_DIR/CLAUDE.md. The installer will not edit that file for you."
 say
 say "Restart any running sessions to pick up the SessionStart hook."
