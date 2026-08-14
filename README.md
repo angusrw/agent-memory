@@ -1,8 +1,8 @@
-# 👣 agent-memory
+# 🪦 graveyard
 
 Persistent memory for coding agents. One session writes down what it did, and the
 next session reads it. Notes live in a git repo you own, outside the projects they
-describe.
+describe. RIP agent persistent-badger 🙏
 
 It solves two problems:
 
@@ -228,12 +228,6 @@ writing, scoped to the repo they touched.
 lines. Use `--days N` to change the window. It does not move note files, so
 `continues:` wikilinks keep resolving. The index controls how much context a session
 loads, not where the files sit.
-
-## Scope
-
-The vault holds session narrative: dated, superseded over time. Durable facts about
-you or a project belong in Claude's own memory (`~/.claude/projects/*/memory/`), which
-this repo does not touch.
 
 ## Licence
 
