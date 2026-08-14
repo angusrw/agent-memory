@@ -1,5 +1,7 @@
 # 🪦 graveyard
 
+> _Nothing beside remains. Round the decay of that colossal TODO, boundless and bare, the lone and level tokens stretch far away._
+
 Persistent memory for coding agents. One session writes down what it did, and the
 next session reads it. Notes live in a git repo you own, outside the projects they
 describe. RIP agent persistent-badger 🙏
